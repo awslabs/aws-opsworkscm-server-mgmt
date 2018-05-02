@@ -1,0 +1,34 @@
+[
+    {
+        "ParameterKey": "PipelineRegion",
+        "ParameterValue": "us-east-1"
+    },
+    {
+        "ParameterKey": "TagPrefix",
+        "ParameterValue": "opsworkscm-server-mgmt"
+    },
+    {
+        "ParameterKey": "CodeCommitRepo",
+        "ParameterValue": "opsworkscm-server-mgmt"
+    },
+    {
+        "ParameterKey": "CodeCommitBranch",
+        "ParameterValue": "master"
+    },
+    {
+        "ParameterKey": "CodeCommitRepoDescription",
+        "ParameterValue": "OpsWorks Configuration Manager server management control repo"
+    },
+    {
+        "ParameterKey": "LambdaBasicExecutionRole",
+        "ParameterValue": "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+    },
+    {
+        "ParameterKey": "LambdaS3Bucket",
+        "ParameterValue": "opsworkscm-lambda-sources-us-east-1"
+    },
+    {
+        "ParameterKey": "LambdaS3Key",
+        "ParameterValue": "opsworkscm-server-mgmt-lambdafunctions.zip"
+    }
+]

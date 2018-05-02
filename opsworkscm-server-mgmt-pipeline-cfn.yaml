@@ -1,0 +1,416 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: OpsWorks OpsWorks CM server management pipeline
+Parameters:
+  PipelineRegion:
+    Type: String
+    Description: Region for the pipeline
+  TagPrefix:
+    Type: String
+    Description: Prefix to be used everywhere
+  CodeCommitRepo:
+    Type: String
+    Description: OpsWorks CM Control Repo in CodeCommit
+  CodeCommitBranch:
+    Type: String
+    Description: CodeCommit control repo branch
+  CodeCommitRepoDescription:
+    Type: String
+    Description: Description for the OpsWorks CM Control Repo in CodeCommit
+  LambdaBasicExecutionRole:
+    Type: String
+    Description: Lambda Basic Execution Role
+  LambdaS3Bucket:
+    Type: String
+    Description: S3 Bucket where Lambda function zip file is located
+  LambdaS3Key:
+    Type: String
+    Description: S3 Bucket Key to locate the lambda function zip file
+Resources:
+
+  AWSCodePipelineServiceRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: codepipeline.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - Ref: oneClickAWSCodePipelineServicegeneric
+      Path: "/"
+      Policies: []
+      RoleName: AWS-CodePipeline-Service
+    Type: AWS::IAM::Role
+  CodeBuildTrustPolicyopsworkscmservermgmt:
+    Properties:
+      Description: Policy needed for Codebuild
+      Groups: []
+      ManagedPolicyName: CodeBuildTrustPolicy-opsworkscm-server-mgmt
+      PolicyDocument:
+        Statement:
+        - Action:
+          - s3:PutObject
+          - s3:GetObject
+          - logs:CreateLogStream
+          - logs:CreateLogGroup
+          - logs:PutLogEvents
+          - ssm:GetParameters
+          - s3:GetObjectVersion
+          Effect: Allow
+          Resource:
+          - arn:aws:s3:::codepipeline-*
+          - Fn::Sub: 'arn:aws:ssm:*:${AWS::AccountId}:parameter/CodeBuild/*'
+          - Fn::Sub: 'arn:aws:logs:*:${AWS::AccountId}:log-group:*'
+          - Fn::Sub: 'arn:aws:logs:*:${AWS::AccountId}:log-group:*:*'
+        - Action:
+          - iam:PassRole
+          - opsworks-cm:*
+          Effect: Allow
+          Resource: "*"
+        Version: '2012-10-17'
+      Roles: []
+      Users: []
+    Type: AWS::IAM::ManagedPolicy
+  awsopsworkscmec2roleInstanceProfile:
+    Properties:
+      InstanceProfileName: aws-opsworks-cm-ec2-role
+      Path: "/"
+      Roles:
+      - Ref: awsopsworkscmec2roleRole
+    Type: AWS::IAM::InstanceProfile
+  awsopsworkscmec2roleRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: ec2.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      - arn:aws:iam::aws:policy/AWSOpsWorksCMInstanceProfileRole
+      Path: "/"
+      Policies: []
+      RoleName: aws-opsworks-cm-ec2-role
+    Type: AWS::IAM::Role
+  awsopsworkscmserviceroleRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: opsworks-cm.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSOpsWorksCMServiceRole
+      Path: "/"
+      Policies: []
+      RoleName: aws-opsworks-cm-service-role
+    Type: AWS::IAM::Role
+  codebuildopsworkscmmgmtserviceroleRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - Ref: CodeBuildTrustPolicyopsworkscmservermgmt
+      Path: "/"
+      Policies: []
+      RoleName: code-build-opsworkscm-mgmt-service-role
+    Type: AWS::IAM::Role
+  oneClickAWSCodePipelineServicegeneric:
+    Properties:
+      Description: Policy needed for Codepipeline
+      Groups: []
+      ManagedPolicyName: oneClick_AWS-CodePipeline-Service_generic
+      PolicyDocument:
+        Statement:
+        - Action:
+          - s3:GetObject
+          - s3:GetObjectVersion
+          - s3:GetBucketVersioning
+          Effect: Allow
+          Resource: "*"
+        - Action:
+          - s3:PutObject
+          Effect: Allow
+          Resource:
+          - arn:aws:s3:::codepipeline*
+          - arn:aws:s3:::elasticbeanstalk*
+        - Action:
+          - codecommit:CancelUploadArchive
+          - codecommit:GetBranch
+          - codecommit:GetCommit
+          - codecommit:GetUploadArchiveStatus
+          - codecommit:UploadArchive
+          Effect: Allow
+          Resource: "*"
+        - Action:
+          - codedeploy:CreateDeployment
+          - codedeploy:GetApplicationRevision
+          - codedeploy:GetDeployment
+          - codedeploy:GetDeploymentConfig
+          - codedeploy:RegisterApplicationRevision
+          Effect: Allow
+          Resource: "*"
+        - Action:
+          - elasticbeanstalk:*
+          - ec2:*
+          - elasticloadbalancing:*
+          - autoscaling:*
+          - cloudwatch:*
+          - s3:*
+          - sns:*
+          - cloudformation:*
+          - rds:*
+          - sqs:*
+          - ecs:*
+          - iam:PassRole
+          Effect: Allow
+          Resource: "*"
+        - Action:
+          - lambda:InvokeFunction
+          - lambda:ListFunctions
+          Effect: Allow
+          Resource: "*"
+        - Action:
+          - opsworks:CreateDeployment
+          - opsworks:DescribeApps
+          - opsworks:DescribeCommands
+          - opsworks:DescribeDeployments
+          - opsworks:DescribeInstances
+          - opsworks:DescribeStacks
+          - opsworks:UpdateApp
+          - opsworks:UpdateStack
+          Effect: Allow
+          Resource: "*"
+        - Action:
+          - cloudformation:CreateStack
+          - cloudformation:DeleteStack
+          - cloudformation:DescribeStacks
+          - cloudformation:UpdateStack
+          - cloudformation:CreateChangeSet
+          - cloudformation:DeleteChangeSet
+          - cloudformation:DescribeChangeSet
+          - cloudformation:ExecuteChangeSet
+          - cloudformation:SetStackPolicy
+          - cloudformation:ValidateTemplate
+          - iam:PassRole
+          Effect: Allow
+          Resource: "*"
+        - Action:
+          - codebuild:BatchGetBuilds
+          - codebuild:StartBuild
+          Effect: Allow
+          Resource: "*"
+        Version: '2012-10-17'
+      Roles: []
+      Users: []
+    Type: AWS::IAM::ManagedPolicy
+  opsworkscmservermgmtlambda1Role:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      - arn:aws:iam::aws:policy/AWSCodePipelineCustomActionAccess
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: "/"
+      Policies: []
+      RoleName: opsworkscm-server-mgmt-lambda1
+    Type: AWS::IAM::Role
+  opsworkscmservermgmtlambda2Role:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+      - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      - arn:aws:iam::aws:policy/AWSCodePipelineCustomActionAccess
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: "/"
+      Policies: []
+      RoleName: opsworkscm-server-mgmt-lambda2
+    Type: AWS::IAM::Role
+
+  OpsWorksCMCodeCommitRepo:
+    Type: 'AWS::CodeCommit::Repository'
+    Properties:
+      RepositoryName: !Ref CodeCommitRepo
+      RepositoryDescription: !Ref CodeCommitRepoDescription
+  BucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket:
+        !Ref CodePipelineBucket
+      PolicyDocument:
+        Id: SSEAndSSLPolicy
+        Statement:
+          - Sid: DenyUnEncryptedObjectUploads
+            Effect: Deny
+            Principal: "*"
+            Action: s3:PutObject
+            Resource:
+              Fn::Join:
+                - ""
+                -
+                  - "arn:aws:s3:::"
+                  -
+                    Ref: "CodePipelineBucket"
+                  - "/*"
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption: aws:kms
+          - Sid: DenyInsecureConnections
+            Effect: Deny
+            Principal: "*"
+            Action: s3:*
+            Resource:
+              Fn::Join:
+                - ""
+                -
+                  - "arn:aws:s3:::"
+                  -
+                    Ref: "CodePipelineBucket"
+                  - "/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: 'false'
+  CodePipelineBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName:
+        Fn::Join: [ "-", [
+         "codepipeline",
+         "Ref": "AWS::StackName"
+        ]]
+  CodePipelineLambdaOne:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: 'This is the place to check if the configuration file contains all required fields'
+      FunctionName: 'opsworkscm_mgmt_syntax_check'
+      Role: !GetAtt opsworkscmservermgmtlambda1Role.Arn
+      Handler: opsworkscm_mgmt_syntax_check.lambda_handler
+      Runtime: python2.7
+      Timeout: 300
+      Code:
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref LambdaS3Key
+  CodePipelineLambdaTwo:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: 'This function checks the configuration against runtime environment'
+      FunctionName: 'opsworkscm_mgmt_live_check'
+      Role: !GetAtt opsworkscmservermgmtlambda2Role.Arn
+      Handler: opsworkscm_mgmt_live_check.lambda_handler
+      Runtime: python2.7
+      Timeout: 300
+      Code:
+        S3Bucket: !Ref LambdaS3Bucket
+        S3Key: !Ref LambdaS3Key
+  CodeBuildOpsworksCMServerMgmtProject:
+    Type: "AWS::CodeBuild::Project"
+    Properties: 
+      Name: !Sub "CodeBuild-${TagPrefix}"
+      Description: CodeBuild project to start OpsWorksCM server provisioning process
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/python:3.5.2
+      ServiceRole: !Ref codebuildopsworkscmmgmtserviceroleRole
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+      TimeoutInMinutes: 10
+  CodeBuildOpsworksCMServerMgmtProjectLogGroup:
+    Type: AWS::Logs::LogGroup
+    # DeletionPolicy: Retain
+    Properties:
+      LogGroupName: !Join ["", ["/aws/codebuild/", Ref: CodeBuildOpsworksCMServerMgmtProject]]
+      RetentionInDays: 14
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub "${TagPrefix}-pipeline"
+      RoleArn: !GetAtt AWSCodePipelineServiceRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref CodePipelineBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: CodeCommit
+              Configuration:
+                PollForSourceChanges: 'true'
+                RepositoryName: !Ref CodeCommitRepo
+                BranchName: !Ref CodeCommitBranch
+              OutputArtifacts:
+                - Name: OpsWorksCMmgmt
+        - Name: OpsWorksCMSyntaxCheck
+          Actions:
+            - InputArtifacts:
+              - Name: OpsWorksCMmgmt
+              Name: PrelimCheck1
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Version: '1'
+                Provider: Lambda
+              OutputArtifacts: []
+              Configuration:
+                FunctionName: opsworkscm_mgmt_syntax_check
+              RunOrder: 1
+        - Name: OpsWorksCMLiveCheck
+          Actions:
+            - InputArtifacts:
+              - Name: OpsWorksCMmgmt
+              Name: PrelimCheck2
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Version: '1'
+                Provider: Lambda
+              OutputArtifacts:
+              - Name: CreationList
+              Configuration:
+                FunctionName: opsworkscm_mgmt_live_check
+              RunOrder: 1
+        - Name: CreateOpsWorksCMServer
+          Actions:
+            - InputArtifacts:
+              - Name: CreationList
+              Name: !Ref TagPrefix
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              OutputArtifacts: []
+              Configuration:
+                ProjectName: !Ref CodeBuildOpsworksCMServerMgmtProject
+              RunOrder: 1
+

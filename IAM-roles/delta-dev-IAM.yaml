@@ -1,0 +1,234 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Build 2018-04-10Z20:15:40 - IAM Roles and Policies for Opsworks CM Server management pipeline
+Outputs:
+  TemplateBuild:
+    Description: CloudFormation Template Build Number
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-TemplateBuild"
+    Value: 2018-04-10Z20:15:40
+Resources:
+  AWSCodePipelineServiceRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: codepipeline.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - Ref: oneClickAWSCodePipelineServicegeneric
+      Path: "/"
+      Policies: []
+      RoleName: AWS-CodePipeline-Service
+    Type: AWS::IAM::Role
+  CodeBuildTrustPolicyopsworkscmservermgmt:
+    Properties:
+      Description: Policy needed for Codebuild
+      Groups: []
+      ManagedPolicyName: CodeBuildTrustPolicy-opsworkscm-server-mgmt
+      PolicyDocument:
+        Statement:
+        - Action:
+          - s3:PutObject
+          - s3:GetObject
+          - logs:CreateLogStream
+          - logs:CreateLogGroup
+          - logs:PutLogEvents
+          - ssm:GetParameters
+          - s3:GetObjectVersion
+          Effect: Allow
+          Resource:
+          - arn:aws:s3:::codepipeline-*
+          - Fn::Sub: 'arn:aws:ssm:*:${AWS::AccountId}:parameter/CodeBuild/*'
+          - Fn::Sub: 'arn:aws:logs:*:${AWS::AccountId}:log-group:*'
+          - Fn::Sub: 'arn:aws:logs:*:${AWS::AccountId}:log-group:*:*'
+        - Action:
+          - iam:PassRole
+          - opsworks-cm:*
+          Effect: Allow
+          Resource: "*"
+        Version: '2012-10-17'
+      Roles: []
+      Users: []
+    Type: AWS::IAM::ManagedPolicy
+  awsopsworkscmec2roleInstanceProfile:
+    Properties:
+      InstanceProfileName: aws-opsworks-cm-ec2-role
+      Path: "/"
+      Roles:
+      - Ref: awsopsworkscmec2roleRole
+    Type: AWS::IAM::InstanceProfile
+  awsopsworkscmec2roleRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: ec2.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      - arn:aws:iam::aws:policy/AWSOpsWorksCMInstanceProfileRole
+      Path: "/"
+      Policies: []
+      RoleName: aws-opsworks-cm-ec2-role
+    Type: AWS::IAM::Role
+  awsopsworkscmserviceroleRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: opsworks-cm.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSOpsWorksCMServiceRole
+      Path: "/"
+      Policies: []
+      RoleName: aws-opsworks-cm-service-role
+    Type: AWS::IAM::Role
+  codebuildopsworkscmmgmtserviceroleRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - Ref: CodeBuildTrustPolicyopsworkscmservermgmt
+      Path: "/"
+      Policies: []
+      RoleName: code-build-opsworkscm-mgmt-service-role
+    Type: AWS::IAM::Role
+  oneClickAWSCodePipelineServicegeneric:
+    Properties:
+      Description: Policy needed for Codepipeline
+      Groups: []
+      ManagedPolicyName: oneClick_AWS-CodePipeline-Service_generic
+      PolicyDocument:
+        Statement:
+        - Action:
+          - s3:GetObject
+          - s3:GetObjectVersion
+          - s3:GetBucketVersioning
+          Effect: Allow
+          Resource: "*"
+        - Action:
+          - s3:PutObject
+          Effect: Allow
+          Resource:
+          - arn:aws:s3:::codepipeline*
+          - arn:aws:s3:::elasticbeanstalk*
+        - Action:
+          - codecommit:CancelUploadArchive
+          - codecommit:GetBranch
+          - codecommit:GetCommit
+          - codecommit:GetUploadArchiveStatus
+          - codecommit:UploadArchive
+          Effect: Allow
+          Resource: "*"
+        - Action:
+          - codedeploy:CreateDeployment
+          - codedeploy:GetApplicationRevision
+          - codedeploy:GetDeployment
+          - codedeploy:GetDeploymentConfig
+          - codedeploy:RegisterApplicationRevision
+          Effect: Allow
+          Resource: "*"
+        - Action:
+          - elasticbeanstalk:*
+          - ec2:*
+          - elasticloadbalancing:*
+          - autoscaling:*
+          - cloudwatch:*
+          - s3:*
+          - sns:*
+          - cloudformation:*
+          - rds:*
+          - sqs:*
+          - ecs:*
+          - iam:PassRole
+          Effect: Allow
+          Resource: "*"
+        - Action:
+          - lambda:InvokeFunction
+          - lambda:ListFunctions
+          Effect: Allow
+          Resource: "*"
+        - Action:
+          - opsworks:CreateDeployment
+          - opsworks:DescribeApps
+          - opsworks:DescribeCommands
+          - opsworks:DescribeDeployments
+          - opsworks:DescribeInstances
+          - opsworks:DescribeStacks
+          - opsworks:UpdateApp
+          - opsworks:UpdateStack
+          Effect: Allow
+          Resource: "*"
+        - Action:
+          - cloudformation:CreateStack
+          - cloudformation:DeleteStack
+          - cloudformation:DescribeStacks
+          - cloudformation:UpdateStack
+          - cloudformation:CreateChangeSet
+          - cloudformation:DeleteChangeSet
+          - cloudformation:DescribeChangeSet
+          - cloudformation:ExecuteChangeSet
+          - cloudformation:SetStackPolicy
+          - cloudformation:ValidateTemplate
+          - iam:PassRole
+          Effect: Allow
+          Resource: "*"
+        - Action:
+          - codebuild:BatchGetBuilds
+          - codebuild:StartBuild
+          Effect: Allow
+          Resource: "*"
+        Version: '2012-10-17'
+      Roles: []
+      Users: []
+    Type: AWS::IAM::ManagedPolicy
+  opsworkscmservermgmtlambda1Role:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      - arn:aws:iam::aws:policy/AWSCodePipelineCustomActionAccess
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: "/"
+      Policies: []
+      RoleName: opsworkscm-server-mgmt-lambda1
+    Type: AWS::IAM::Role
+  opsworkscmservermgmtlambda2Role:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+      - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      - arn:aws:iam::aws:policy/AWSCodePipelineCustomActionAccess
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: "/"
+      Policies: []
+      RoleName: opsworkscm-server-mgmt-lambda2
+    Type: AWS::IAM::Role
+

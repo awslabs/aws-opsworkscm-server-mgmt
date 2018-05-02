@@ -1,0 +1,43 @@
+{
+  "ops_delete_if_absent_entry": "True",
+  "ops_env": [
+    {
+      "name": "devchefinstance1",
+      "ops_engine": "Chef",
+      "ops_engine_model": "Single",
+      "ops_engine_version": "12",
+      "ops_account": "121895852041",
+      "ops_region": "us-east-1",
+      "ops_subnet": "subnet-8ac31dc0"
+    },
+    {
+      "name": "devchefinstance2",
+      "ops_engine": "Chef",
+      "ops_engine_model": "Single",
+      "ops_engine_version": "12",
+      "ops_account": "121895852041",
+      "ops_region": "us-east-1",
+      "ops_subnet": "subnet-8ac31dc0",
+      "ops_key_pair_name": "",
+      "ops_instance_type": "r4.xlarge",
+      "ops_maintenance_window": "Mon:08:00",
+      "ops_backup_window": "Sun:01:00",
+      "ops_use_automated_backup": "False",
+      "ops_backup_retention": 29
+    },
+    {
+      "name": "devpuppetinstance1",
+      "ops_engine": "Puppet",
+      "ops_engine_model": "Monolithic",
+      "ops_engine_version": "2017",
+      "ops_account": "121895852041",
+      "ops_region": "us-east-1",
+      "ops_subnet": "subnet-8ac31dc0",
+      "ops_key_pair_name": "myec2keypair2",
+      "ops_maintenance_window": "Mon:04:00",
+      "ops_backup_window": "Tue:01:00",
+      "ops_use_automated_backup": "True",
+      "ops_backup_retention": 10
+    }
+  ]
+}
