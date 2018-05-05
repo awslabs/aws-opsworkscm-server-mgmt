@@ -311,7 +311,11 @@ Resources:
       Runtime: python2.7
       Timeout: 300
       Code:
-        S3Bucket: !Ref LambdaS3Bucket
+        S3Bucket:
+          Fn::Join: [ "-", [
+            !Ref LambdaS3Bucket,
+            !Sub "${AWS::Region}"
+          ]]
         S3Key: !Ref LambdaS3Key
   CodePipelineLambdaTwo:
     Type: AWS::Lambda::Function
@@ -323,7 +327,11 @@ Resources:
       Runtime: python2.7
       Timeout: 300
       Code:
-        S3Bucket: !Ref LambdaS3Bucket
+        S3Bucket:
+          Fn::Join: [ "-", [
+            !Ref LambdaS3Bucket,
+            !Sub "${AWS::Region}"
+          ]]
         S3Key: !Ref LambdaS3Key
   CodeBuildOpsworksCMServerMgmtProject:
     Type: "AWS::CodeBuild::Project"

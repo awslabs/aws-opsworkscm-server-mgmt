@@ -29,34 +29,10 @@ aws-opsworkscm-server-mgmt sets up a pipeline that manages OpsWorks Configuratio
 
 ## Prerequisite
 
-* Lambda function zip file must be hosted in a S3 bucket and its name must be specified in the opsworkscm-server-mgmt-pipeline-params.json file, using 'LambdaS3Bucket' parameter key.  For example,
-```json
-{
-  "ParameterKey": "LambdaS3Bucket",
-  "ParameterValue": "opsworkscm-lambda-sources-us-east-1"
-}
-```
-
-* Lambda function zip file's name can be anything but the name must be end with .zip extension and it must be specified in the opsworkscm-server-mgmt-pipeline-params.json file, using 'LambdaS3Key' parameter key.  For example,
-```json
-{
-  "ParameterKey": "LambdaS3Key",
-  "ParameterValue": "opsworkscm-server-mgmt-lambdafunctions.zip"
-}
-```
-
 * If executing the cloudformation from the AWS CLI, the configured profile should be point to the desired target environment.
-
-####NOTE: Please ensure that the bucket that holds the lambda function zip file is in the same region as the pipeline.  This is a known Cloudformation limitation.
 
 
 ## Pipeline Installation
-***Prerequisite***:
-Please make sure to stage the lambda functions before running the cloudformation template.  The functions neeed to exist in a S3 bucket as a zip file (For example, s3://opsworkscm-lambda-sources-us-east-1/opsworkscm-server-mgmt-lambdafunctions.zip)
-
-
-if you are not sure how to do that then please leave the LambdaS3Bucket and LambdaS3Key parameters default in the cloudformation parameters file.  If you would like to stage your own lambda function zip file then please modify the LambdaS3Bucket and LambdaS3Key parameters and use the zipupandsend.sh script to "zip up and send" to your own bucket.
-
 
 ***Installation***: In order to deploy the pipeline, please execute the deploy-pipeline.sh script:
 
