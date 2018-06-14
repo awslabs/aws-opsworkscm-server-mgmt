@@ -1,5 +1,6 @@
 {
   "ops_delete_if_absent_entry": "True",
+  "ops_sns_arn": "arn:aws:sns:us-east-1:555555555555:notifyme",
   "ops_env": [
     {
       "name": "devchefinstance1",

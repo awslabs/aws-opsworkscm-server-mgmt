@@ -121,6 +121,7 @@ Resources:
         Version: '2012-10-17'
       ManagedPolicyArns:
       - Ref: CodeBuildTrustPolicyopsworkscmservermgmt
+      - arn:aws:iam::aws:policy/AmazonSSMFullAccess
       Path: "/"
       Policies: []
       RoleName: code-build-opsworkscm-mgmt-service-role
@@ -245,9 +246,28 @@ Resources:
       - arn:aws:iam::aws:policy/AmazonS3FullAccess
       - arn:aws:iam::aws:policy/AWSCodePipelineCustomActionAccess
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - arn:aws:iam::aws:policy/AmazonSNSReadOnlyAccess
       Path: "/"
       Policies: []
       RoleName: opsworkscm-server-mgmt-lambda2
+    Type: AWS::IAM::Role
+  opsworkscmservermgmtlambda3Role:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      - arn:aws:iam::aws:policy/AWSCodePipelineCustomActionAccess
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - arn:aws:iam::aws:policy/AmazonSNSFullAccess
+      Path: "/"
+      Policies: []
+      RoleName: opsworkscm-server-mgmt-lambda3
     Type: AWS::IAM::Role
 
   OpsWorksCMCodeCommitRepo:
@@ -301,6 +321,15 @@ Resources:
          "codepipeline",
          "Ref": "AWS::StackName"
         ]]
+  StarterKitBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName:
+        Fn::Join: [ "-", [
+         "codepipeline",
+         "Ref": "AWS::StackName",
+         "starterkit"
+        ]]
   CodePipelineLambdaOne:
     Type: AWS::Lambda::Function
     Properties:
@@ -324,6 +353,22 @@ Resources:
       FunctionName: 'opsworkscm_mgmt_live_check'
       Role: !GetAtt opsworkscmservermgmtlambda2Role.Arn
       Handler: opsworkscm_mgmt_live_check.lambda_handler
+      Runtime: python2.7
+      Timeout: 300
+      Code:
+        S3Bucket:
+          Fn::Join: [ "-", [
+            !Ref LambdaS3Bucket,
+            !Sub "${AWS::Region}"
+          ]]
+        S3Key: !Ref LambdaS3Key
+  CodePipelineLambdaThree:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: 'This function stages the Starter Kit in the right bucket and sends out the notification'
+      FunctionName: 'opsworkscm_mgmt_sendNotification'
+      Role: !GetAtt opsworkscmservermgmtlambda3Role.Arn
+      Handler: opsworkscm_mgmt_sendNotification.lambda_handler
       Runtime: python2.7
       Timeout: 300
       Code:
@@ -403,7 +448,7 @@ Resources:
                 Version: '1'
                 Provider: Lambda
               OutputArtifacts:
-              - Name: CreationList
+                - Name: CreationList
               Configuration:
                 FunctionName: opsworkscm_mgmt_live_check
               RunOrder: 1
@@ -417,8 +462,22 @@ Resources:
                 Owner: AWS
                 Version: '1'
                 Provider: CodeBuild
-              OutputArtifacts: []
+              OutputArtifacts:
+                - Name: StarterKit
               Configuration:
                 ProjectName: !Ref CodeBuildOpsworksCMServerMgmtProject
               RunOrder: 1
-
+        - Name: SendNotification
+          Actions:
+            - InputArtifacts:
+              - Name: StarterKit
+              Name: PublishSNS
+              ActionTypeId:
+                Category: Invoke
+                Owner: AWS
+                Version: '1'
+                Provider: Lambda
+              OutputArtifacts: []
+              Configuration:
+                FunctionName: opsworkscm_mgmt_sendNotification
+              RunOrder: 1

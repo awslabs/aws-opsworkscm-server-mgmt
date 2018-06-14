@@ -77,7 +77,8 @@ aws cloudformation delete-stack --stack-name opsworkscm-stack1
 ## Currently supported configuration parameters
 ```
 {
-  "ops_delete_if_absent_entry": "True",
+  "ops_delete_if_absent_entry": [Boolean],
+  "ops_sns_arn": [ARN String]
   "ops_env":
   {
     "name": [String],
@@ -98,6 +99,7 @@ aws cloudformation delete-stack --stack-name opsworkscm-stack1
 }
 ```
 * "ops_delete_if_absent_entry": "True" or "False" (optional)
+* "ops_sns_arn": SNS Topic ARN to use for notification (optional)
 * "ops_env"{ }: This is used to describe an OWCA Server environment (required)
 * "name": Name of the OpsWorks Chef Automate Server Instance (required)
 * "ops_engine": Either 'Chef' or 'Puppet' (required and case sensitive)
@@ -143,15 +145,7 @@ The following feature request has been received and will be made available in th
 
 ###Feature Enhancements:
 
-1. Delete OWCA server feature with a control parameter - ops_delete_if_absent (boolean)
-
-2. Ability to deploy the pipeline in other regions (currently only us-east-1 is supported) NOTE: Please be careful to understand that OWCA servers can be provisioned any region that supports opsworks. This is different from the location of the pipeline.
-
-3. Cross account provisioning support.
-
-4. Store install state in an external store like S3 or DynamoDB instead of generating state in a shell script.
-
-5. Provision an ALB (Application Load Balancer) as part of the stack and associate OWCA server's public IP address to the ALB and possibly associate a select CNAME
+* Cross account provisioning support
 
 ## License Summary
 
